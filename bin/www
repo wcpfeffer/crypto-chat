@@ -3,6 +3,8 @@
 const discord = require('discord.js');
 const client = new discord.Client();
 
+var config = require("./config.json");
+
 client.on('ready', () => {
     console.log('I am ready!');
 });
@@ -13,7 +15,7 @@ client.on('message', message => {
     }
 });
 
-client.login('');
+client.login(config.api_key);
 
 // /**
 //  * Module dependencies.
