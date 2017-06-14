@@ -4,49 +4,14 @@
 const http = require('http');
 
 class WebTask {
-    constructor(callback){
-        this._consumerCallback = callback;       // callback when the web task has been completed
-    }
-
-    /**
-     * @returns {*} the callback for when the execute function has completed with an HTTP request
-     */
-    get responseCallback(){
-        return this._responseCallback;
-    }
-
-    /**
-     * Sets the callback for when the execute function has completed with an HTTP request
-     * @param responseCallback  the callback to be assigned
-     */
-    set responseCallback(responseCallback) {
-        this._responseCallback = responseCallback;
-    }
-
-    /**
-     * @returns {*} the callback for the object consing the data from the task
-     */
-    get consumerCallback(){
-        return this._consumerCallback;
-    }
-
-    /**
-     * Sets the callback for the object consing the data from the task
-     * @param callback the callback to be assigned
-     */
-    set consumerCallback(callback) {
-        this._consumerCallback = callback;
-    }
-
     /**
      * Executes an HTTP command
      * @param host  the hostname
      * @param path  the path relative to the hostname
+     * @param responseCallback
+     * @param requestCallback
      */
-    execute(host, path) {
-        let responseCallback = this.responseCallback;
-        let requestCallback = this.consumerCallback;
-
+    static execute(host, path, responseCallback, requestCallback) {
         return http.get({
             host: host,
             path: path
@@ -63,16 +28,11 @@ class WebTask {
 }
 
 module.exports.CoinTask = class CoinTask extends WebTask {
-    constructor(callback) {
-        super(callback);
-    }
-
     /**
      * Fetches information about the coin
      */
-    fetchCoinIndex() {
-        this.responseCallback = CoinTask._onFetchCoinIndexResponse;
-        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath());
+    static fetchCoinIndex(callback) {
+        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath(), CoinTask._onFetchCoinIndexResponse, callback);
     }
 
     /**
@@ -105,9 +65,8 @@ module.exports.CoinTask = class CoinTask extends WebTask {
      * Finds the price of a coin based on its full name
      * @param coinName  the full coin name
      */
-    lookupCoinPrice(coinName) {
-        this.responseCallback = CoinTask._onCoinLookupResponse;
-        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath() + coinName + "/"); // execute the HTTP get command
+    static lookupCoinPrice(coinName, callback) {
+        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath() + coinName + "/", CoinTask._onCoinLookupResponse, callback); // execute the HTTP get command
     }
 
     /**

@@ -61,9 +61,7 @@ module.exports.DiscordBot = class DiscordBot {
                 console.log('Initialized ticket lookup table');
             }
         };
-
-        let coinTask = new CoinTask(callback);
-        coinTask.fetchCoinIndex();
+        CoinTask.fetchCoinIndex(callback);
     }
 
     _handleMessage(message) {
@@ -91,9 +89,7 @@ module.exports.DiscordBot = class DiscordBot {
                     message.reply("could not find coin");
                 }
             };
-
-            let coinTask = new CoinTask(callback);
-            coinTask.lookupCoinPrice(coinName);
+            CoinTask.lookupCoinPrice(coinName, callback);
         }
         else if (message.content === "test") {
             console.log(message);
