@@ -19,7 +19,7 @@ module.exports.DiscordBot = class DiscordBot {
             console.log('Discord bot up and running');
         });
         client.on('message', message => {
-            this.p_handleMessage(message);
+            this._handleMessage(message);
         });
         client.login(config.api_key);
     }
@@ -32,7 +32,7 @@ module.exports.DiscordBot = class DiscordBot {
     // "private" methods that should only be called internally
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    p_handleMessage(message) {
+    _handleMessage(message) {
         if (message.content === 'ping') {
             message.reply('pong');
         }
