@@ -1,7 +1,7 @@
 /**
  * Created by William on 6/13/2017.
  */
-const http = require('http');
+const http = require("http");
 
 class WebTask {
     /**
@@ -16,11 +16,11 @@ class WebTask {
             host: host,
             path: path
         }, function(response) {
-            var data = '';
-            response.on('data', function(d) {
+            var data = "";
+            response.on("data", function(d) {
                 data += d;
             });
-            response.on('end', function() {
+            response.on("end", function() {
                 responseCallback(data, requestCallback);
             });
         });

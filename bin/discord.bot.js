@@ -2,13 +2,15 @@
  * Created by Nathan on 6/13/2017.
  */
 
+const Database = require("./database").Database;
 const discord = require('discord.js');
 const client = new discord.Client();
 
-var config = require("./config.json");
-var CoinTask = require("./tasks").CoinTask;
+let config = require("./config.json");
+let CoinTask = require("./tasks").CoinTask;
 
-var whiteListMap = new Map();
+let userDatabase;
+let whiteListMap = new Map();
 
 // coin index information
 var tickerLookupMap = new Map();
@@ -21,23 +23,31 @@ module.exports.DiscordBot = class DiscordBot {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     constructor() {
+        userDatabase = new Database("users.db");
+
         for (let listItem of config.channel_whitelist) {
-            console.log(listItem);
             whiteListMap.set(listItem, listItem);
         }
     }
 
     start() {
-        client.on('ready', () => {
+        client.on("ready", () => {
             // update coin index information
             this._updateCoinIndex();
             // also setup a timer
             setInterval(this._updateCoinIndex, config.coin_index_update_interval);
 
-            console.log('Discord bot up and running');
+            console.log("Discord bot up and running");
         });
-        client.on('message', message => {
+        client.on("message", message => {
             this._handleMessage(message);
+        });
+        client.on("disconnect", () => {
+            // restart in the event of a disconnect after waiting a bit to limit spam
+            setTimeout(() => {
+                this.start();
+            }, 30000);
+
         });
         client.login(config.api_key);
     }
@@ -52,13 +62,13 @@ module.exports.DiscordBot = class DiscordBot {
 
     _updateCoinIndex() {
         let callback = function(indexMap, tickerMap) {
-            if(indexMap !== undefined) {
+            if (indexMap !== undefined) {
                 coinIndexMap = indexMap;
-                console.log('Initialized index map');
+                console.log("Initialized index map");
             }
-            if(tickerMap !== undefined) {
+            if (tickerMap !== undefined) {
                 tickerLookupMap = tickerMap;
-                console.log('Initialized ticket lookup table');
+                console.log("Initialized ticket lookup table");
             }
         };
         CoinTask.fetchCoinIndex(callback);
@@ -70,31 +80,30 @@ module.exports.DiscordBot = class DiscordBot {
             return;
         }
 
-        if (message.content === 'ping') {
-            message.reply('pong');
-        }
-        else if (message.content.startsWith("price of ")){
+        if (message.content.startsWith("price of ")){
             let coinName = message.content.substr(9, message.content.length).toLowerCase();
 
             // if we dont have this token cached, check the ticker lookup table for a symbol
             let symbol = coinName.toUpperCase();
-            if(!coinIndexMap.has(coinName) && tickerLookupMap.has(symbol)) {
+            if (!coinIndexMap.has(coinName) && tickerLookupMap.has(symbol)) {
                 coinName = tickerLookupMap.get(symbol);
             }
 
             let callback = function(coinPrice) {
                 if (coinPrice !== null) {
-                    message.reply("the price of " + coinName + " is " + coinPrice + " USD.");
+                    message.reply("The price of " + coinName + " is " + coinPrice + " USD.");
                 } else {
-                    message.reply("could not find coin");
+                    message.reply("Could not find coin: '" + coinName + "'");
                 }
             };
             CoinTask.lookupCoinPrice(coinName, callback);
         }
+        else if (message.content.startsWith("watch todo")) {
+            message.author.sendMessage("Watching coin for you");
+            // todo: further implement this
+        }
         else if (message.content === "test") {
             console.log(message);
-            console.log(" - - - - - ");
-            console.log(message.channel.id);
         }
     }
 }
