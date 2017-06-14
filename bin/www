@@ -4,6 +4,7 @@ const discord = require('discord.js');
 const client = new discord.Client();
 
 var config = require("./config.json");
+var CoinTask = require("./tasks").CoinTask;
 
 client.on('ready', () => {
     console.log('I am ready!');
@@ -13,96 +14,20 @@ client.on('message', message => {
     if (message.content === 'ping') {
         message.reply('pong');
     }
+    else if(message.content.startsWith("price of ")){
+        let coinName = message.content.substr(9, message.content.length);
+
+        let callback = function(coinPrice) {
+            if(coinPrice !== null) {
+                message.reply("the price of " + coinName + " is " + coinPrice + " USD.");
+            } else {
+                message.reply("could not find coin");
+            }
+        };
+
+        let coinTask = new CoinTask(callback);
+        coinTask.lookupCoinPrice(coinName);
+    }
 });
 
 client.login(config.api_key);
-
-// /**
-//  * Module dependencies.
-//  */
-//
-// var app = require('../app');
-// var debug = require('debug')('discordbot:server');
-// var http = require('http');
-//
-// /**
-//  * Get port from environment and store in Express.
-//  */
-//
-// var port = normalizePort(process.env.PORT || '3000');
-// app.set('port', port);
-//
-// /**
-//  * Create HTTP server.
-//  */
-//
-// var server = http.createServer(app);
-//
-// /**
-//  * Listen on provided port, on all network interfaces.
-//  */
-//
-// server.listen(port);
-// server.on('error', onError);
-// server.on('listening', onListening);
-//
-// /**
-//  * Normalize a port into a number, string, or false.
-//  */
-//
-// function normalizePort(val) {
-//   var port = parseInt(val, 10);
-//
-//   if (isNaN(port)) {
-//     // named pipe
-//     return val;
-//   }
-//
-//   if (port >= 0) {
-//     // port number
-//     return port;
-//   }
-//
-//   return false;
-// }
-//
-// /**
-//  * Event listener for HTTP server "error" event.
-//  */
-//
-// function onError(error) {
-//   if (error.syscall !== 'listen') {
-//     throw error;
-//   }
-//
-//   var bind = typeof port === 'string'
-//     ? 'Pipe ' + port
-//     : 'Port ' + port;
-//
-//   // handle specific listen errors with friendly messages
-//   switch (error.code) {
-//     case 'EACCES':
-//       console.error(bind + ' requires elevated privileges');
-//       process.exit(1);
-//       break;
-//     case 'EADDRINUSE':
-//       console.error(bind + ' is already in use');
-//       process.exit(1);
-//       break;
-//     default:
-//       throw error;
-//   }
-// }
-//
-// /**
-//  * Event listener for HTTP server "listening" event.
-//  */
-//
-// function onListening() {
-//   var addr = server.address();
-//   var bind = typeof addr === 'string'
-//     ? 'pipe ' + addr
-//     : 'port ' + addr.port;
-//   debug('Listening on ' + bind);
-// }
-
