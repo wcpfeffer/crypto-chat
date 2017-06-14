@@ -5,29 +5,47 @@ const http = require('http');
 
 class WebTask {
     constructor(callback){
-        this._callback = callback;       // callback when the web task has been completed
+        this._consumerCallback = callback;       // callback when the web task has been completed
     }
 
+    /**
+     * @returns {*} the callback for when the execute function has completed with an HTTP request
+     */
     get responseCallback(){
         return this._responseCallback;
     }
 
+    /**
+     * Sets the callback for when the execute function has completed with an HTTP request
+     * @param responseCallback  the callback to be assigned
+     */
     set responseCallback(responseCallback) {
         this._responseCallback = responseCallback;
     }
 
-    get callback(){
-        return this._callback;
+    /**
+     * @returns {*} the callback for the object consing the data from the task
+     */
+    get consumerCallback(){
+        return this._consumerCallback;
     }
 
-    set callback(callback) {
-        this._callback = callback;
+    /**
+     * Sets the callback for the object consing the data from the task
+     * @param callback the callback to be assigned
+     */
+    set consumerCallback(callback) {
+        this._consumerCallback = callback;
     }
 
-
+    /**
+     * Executes an HTTP command
+     * @param host  the hostname
+     * @param path  the path relative to the hostname
+     */
     execute(host, path) {
         let responseCallback = this.responseCallback;
-        let requestCallback = this.callback;
+        let requestCallback = this.consumerCallback;
 
         return http.get({
             host: host,
@@ -47,35 +65,55 @@ class WebTask {
 module.exports.CoinTask = class CoinTask extends WebTask {
     constructor(callback){
         super(callback);
-        this.responseCallback = this._onResponse;
+        this.responseCallback = CoinTask._onCoinLookupResponse;
     }
 
+    /**
+     * Finds the price of a coin based on its full name
+     * @param coinName  the full coin name
+     */
     lookupCoinPrice(coinName) {
-        this.execute(this._getCoinHost(), this._getCoinHostPath(coinName)); // execute the HTTP get command
+        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath(coinName)); // execute the HTTP get command
     }
 
-    _onResponse(data, requestCallback){
-        if(requestCallback){
+    /**
+     * The function responsible for handling the data returned from the HTTP response
+     * @param data                  the data returned from the HTTP response
+     * @param consumerCallback      the callback to the consumer of this task
+     * @private
+     */
+    static _onCoinLookupResponse(data, consumerCallback){
+        if(consumerCallback){
             // expects JSON
             let coinData = JSON.parse(data);
             if(coinData[0] !== undefined) {
                 let coinPrice = coinData[0].price_usd;
                 if(coinPrice) {
-                    requestCallback(coinPrice);
+                    consumerCallback(coinPrice);
                     return;
                 }
             }
 
             // fail with null return
-            requestCallback(null);
+            consumerCallback(null);
         }
     }
 
-    _getCoinHost(){
+    /**
+     * @returns {string} the hostname of the API for coin lookup
+     * @private
+     */
+    static _getCoinHost(){
         return "api.coinmarketcap.com";
     }
 
-    _getCoinHostPath(coinName){
+    /**
+     * Returns the path relative to the host given a coin name
+     * @param coinName      the name of the coin
+     * @returns {string}    the path of the HTTP request relative to the host name
+     * @private
+     */
+    static _getCoinHostPath(coinName){
         return "/v1/ticker/" + coinName + "/";
     }
-}
+};
