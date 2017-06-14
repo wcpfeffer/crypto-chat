@@ -63,7 +63,7 @@ class WebTask {
 }
 
 module.exports.CoinTask = class CoinTask extends WebTask {
-    constructor(callback){
+    constructor(callback) {
         super(callback);
         this.responseCallback = CoinTask._onCoinLookupResponse;
     }

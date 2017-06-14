@@ -13,32 +13,38 @@ module.exports.DiscordBot = class DiscordBot {
         client.on('ready', () => {
             console.log('Discord bot up and running');
         });
-
         client.on('message', message => {
-            if (message.content === 'ping') {
-                message.reply('pong');
-            }
-            else if(message.content.startsWith("price of ")){
-                let coinName = message.content.substr(9, message.content.length);
-
-                let callback = function(coinPrice) {
-                    if(coinPrice !== null) {
-                        message.reply("the price of " + coinName + " is " + coinPrice + " USD.");
-                    } else {
-                        message.reply("could not find coin");
-                    }
-                };
-
-                let coinTask = new CoinTask(callback);
-                coinTask.lookupCoinPrice(coinName);
-            }
+            this.p_handleMessage(message);
         });
-
         client.login(config.api_key);
     }
 
     stop() {
         client.destroy();
+    }
+
+    p_handleMessage(message) {
+        if (message.content === 'ping') {
+            message.reply('pong');
+        }
+        else if (message.content.startsWith("price of ")){
+            let coinName = message.content.substr(9, message.content.length);
+
+            let callback = function(coinPrice) {
+                if (coinPrice !== null) {
+                    message.reply("the price of " + coinName + " is " + coinPrice + " USD.");
+                } else {
+                    message.reply("could not find coin");
+                }
+            };
+
+            let coinTask = new CoinTask(callback);
+            coinTask.lookupCoinPrice(coinName);
+        }
+        else if (message.content === "test") {
+            console.log(message);
+            console.log(message.channel);
+        }
     }
 }
 
