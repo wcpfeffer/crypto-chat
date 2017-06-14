@@ -65,7 +65,40 @@ class WebTask {
 module.exports.CoinTask = class CoinTask extends WebTask {
     constructor(callback) {
         super(callback);
-        this.responseCallback = CoinTask._onCoinLookupResponse;
+    }
+
+    /**
+     * Fetches information about the coin
+     */
+    fetchCoinIndex() {
+        this.responseCallback = CoinTask._onFetchCoinIndexResponse;
+        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath());
+    }
+
+    /**
+     * Fetches the entire coin index for lookup
+     * @param data                  the data associated with the http request
+     * @param consumerCallback      the callback to the consumer of this method
+     * @private
+     */
+    static _onFetchCoinIndexResponse(data, consumerCallback) {
+        let tickerLookup = new Map();
+        let coinIndex = new Map();
+
+        if(consumerCallback){
+            // expects JSON
+            let coinData = JSON.parse(data);
+
+            for(let i = 0; i < coinData.length; i++){
+                let id = coinData[i].id;
+                coinIndex.set(id, coinData[i]);
+
+                let symbol = coinData[i].symbol;
+                tickerLookup.set(symbol, id);
+            }
+        }
+
+        consumerCallback(coinIndex, tickerLookup);
     }
 
     /**
@@ -73,7 +106,8 @@ module.exports.CoinTask = class CoinTask extends WebTask {
      * @param coinName  the full coin name
      */
     lookupCoinPrice(coinName) {
-        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath(coinName)); // execute the HTTP get command
+        this.responseCallback = CoinTask._onCoinLookupResponse;
+        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath() + coinName + "/"); // execute the HTTP get command
     }
 
     /**
@@ -113,7 +147,7 @@ module.exports.CoinTask = class CoinTask extends WebTask {
      * @returns {string}    the path of the HTTP request relative to the host name
      * @private
      */
-    static _getCoinHostPath(coinName){
-        return "/v1/ticker/" + coinName + "/";
+    static _getCoinHostPath(){
+        return "/v1/ticker/";
     }
 };

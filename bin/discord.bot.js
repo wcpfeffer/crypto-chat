@@ -10,6 +10,10 @@ var CoinTask = require("./tasks").CoinTask;
 
 var whiteListMap = new Map();
 
+// coin index information
+var tickerLookupMap = new Map();
+var coinIndexMap = new Map();
+
 module.exports.DiscordBot = class DiscordBot {
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -25,6 +29,9 @@ module.exports.DiscordBot = class DiscordBot {
 
     start() {
         client.on('ready', () => {
+            // update coin index information
+            this._updateCoinIndex();
+
             console.log('Discord bot up and running');
         });
         client.on('message', message => {
@@ -41,6 +48,25 @@ module.exports.DiscordBot = class DiscordBot {
     // "private" methods that should only be called internally
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    _updateCoinIndex() {
+        let callback = function(indexMap, tickerMap) {
+            if(indexMap !== undefined) {
+                coinIndexMap = indexMap;
+                console.log('Initialized index map');
+            }
+            if(tickerMap !== undefined) {
+                tickerLookupMap = tickerMap;
+                console.log('Initialized ticket lookup table');
+            }
+        };
+
+        let coinTask = new CoinTask(callback);
+        coinTask.fetchCoinIndex();
+
+        // call this again in N minutes
+        setTimeout(this._updateCoinIndex, config.coin_index_update_interval)
+    }
+
     _handleMessage(message) {
         // if the message is from a channel that is not in the white list then ignore it
         if (whiteListMap.get(message.channel.id) === undefined) {
@@ -51,7 +77,13 @@ module.exports.DiscordBot = class DiscordBot {
             message.reply('pong');
         }
         else if (message.content.startsWith("price of ")){
-            let coinName = message.content.substr(9, message.content.length);
+            let coinName = message.content.substr(9, message.content.length).toLowerCase();
+
+            // if we dont have this token cached, check the ticker lookup table for a symbol
+            let symbol = coinName.toUpperCase();
+            if(!coinIndexMap.has(coinName) && tickerLookupMap.has(symbol)) {
+                coinName = tickerLookupMap.get(symbol);
+            }
 
             let callback = function(coinPrice) {
                 if (coinPrice !== null) {
