@@ -8,11 +8,20 @@ const client = new discord.Client();
 var config = require("./config.json");
 var CoinTask = require("./tasks").CoinTask;
 
+var whiteListMap = new Map();
+
 module.exports.DiscordBot = class DiscordBot {
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // "public" methods
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    constructor() {
+        for (let listItem of config.channel_whitelist) {
+            console.log(listItem);
+            whiteListMap.set(listItem, listItem);
+        }
+    }
 
     start() {
         client.on('ready', () => {
@@ -33,6 +42,11 @@ module.exports.DiscordBot = class DiscordBot {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     _handleMessage(message) {
+        // if the message is from a channel that is not in the white list then ignore it
+        if (whiteListMap.get(message.channel.id) === undefined) {
+            return;
+        }
+
         if (message.content === 'ping') {
             message.reply('pong');
         }
@@ -52,7 +66,8 @@ module.exports.DiscordBot = class DiscordBot {
         }
         else if (message.content === "test") {
             console.log(message);
-            console.log(message.channel);
+            console.log(" - - - - - ");
+            console.log(message.channel.id);
         }
     }
 }
