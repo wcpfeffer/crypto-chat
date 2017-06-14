@@ -9,6 +9,11 @@ var config = require("./config.json");
 var CoinTask = require("./tasks").CoinTask;
 
 module.exports.DiscordBot = class DiscordBot {
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // "public" methods
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     start() {
         client.on('ready', () => {
             console.log('Discord bot up and running');
@@ -22,6 +27,10 @@ module.exports.DiscordBot = class DiscordBot {
     stop() {
         client.destroy();
     }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // "private" methods that should only be called internally
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     p_handleMessage(message) {
         if (message.content === 'ping') {
