@@ -31,6 +31,8 @@ module.exports.DiscordBot = class DiscordBot {
         client.on('ready', () => {
             // update coin index information
             this._updateCoinIndex();
+            // also setup a timer
+            setInterval(this._updateCoinIndex, config.coin_index_update_interval);
 
             console.log('Discord bot up and running');
         });
@@ -62,9 +64,6 @@ module.exports.DiscordBot = class DiscordBot {
 
         let coinTask = new CoinTask(callback);
         coinTask.fetchCoinIndex();
-
-        // call this again in N minutes
-        setTimeout(this._updateCoinIndex, config.coin_index_update_interval)
     }
 
     _handleMessage(message) {
