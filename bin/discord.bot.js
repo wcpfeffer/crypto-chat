@@ -6,8 +6,13 @@ const Database = require("./database").Database;
 const discord = require('discord.js');
 const client = new discord.Client();
 
-let config = require("./config.json");
-let CoinMarketCap = require("./site_apis/coinmarketcap").CoinMarketCap;
+const CoinMarketCap = require("./site_apis/coinmarketcap").CoinMarketCap;
+const Bittrex = require("./site_apis/bittrex").Bittrex;
+
+const config = require("./config.json");
+
+const botIDMessageSuffix = " | bot ID: " + config.bot_id;
+let displayBotID = false;
 
 let userDatabase;
 let whiteListMap = new Map();
@@ -16,9 +21,6 @@ let whiteListMap = new Map();
 let tickerLookupMap = new Map();
 let coinIndexMap = new Map();
 
-let botIDMessageSuffix = " | bot ID: " + config.bot_id;
-let displayBotID = false;
-
 module.exports.DiscordBot = class DiscordBot {
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -26,6 +28,9 @@ module.exports.DiscordBot = class DiscordBot {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     constructor() {
+        this.coinMarketCapAPI = new CoinMarketCap();
+        this.bittrexAPI = new Bittrex();
+
         userDatabase = new Database("users.db");
 
         for (let listItem of config.channel_whitelist) {
@@ -33,17 +38,22 @@ module.exports.DiscordBot = class DiscordBot {
         }
     }
 
+
     start() {
         client.on("ready", () => {
-            // update coin index information
-            this._updateCoinIndex();
-            // also setup a timer
-            setInterval(this._updateCoinIndex, config.coin_index_update_interval);
+            // update local cache
+            this._updateLocalCache();
+            // also setup a timer to continually update it
+            setInterval(this._updateLocalCache, config.local_cache_update_interval);
 
             console.log("Discord bot up and running. Bot ID: " + config.bot_id);
         });
         client.on("message", message => {
-            this._handleMessage(message);
+            try {
+                this._handleMessage(message);
+            } catch(e) {
+                console.log(e);
+            }
         });
         client.on("disconnect", () => {
             // restart in the event of a disconnect after waiting a bit to limit spam
@@ -63,6 +73,11 @@ module.exports.DiscordBot = class DiscordBot {
     // "private" methods that should only be called internally
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    _updateLocalCache() {
+        this._updateCoinIndex();
+        this.bittrexAPI.updateCache()
+    }
+
     _updateCoinIndex() {
         let callback = function(indexMap, tickerMap) {
             if (indexMap !== undefined) {
@@ -74,7 +89,7 @@ module.exports.DiscordBot = class DiscordBot {
                 console.log("Initialized ticket lookup table");
             }
         };
-        CoinMarketCap.fetchCoinIndex(callback);
+        this.coinMarketCapAPI.fetchCoinIndex(callback);
     }
 
     _handleMessage(message) {
@@ -100,14 +115,16 @@ module.exports.DiscordBot = class DiscordBot {
                     self._respondPublicly(message, "Could not find coin: '" + coinName + "'");
                 }
             };
-            CoinMarketCap.lookupCoinPrice(coinName, callback);
+            this.coinMarketCapAPI.lookupCoinPrice(coinName, callback);
         }
         else if (message.content.startsWith("watch todo")) {
             this._respondPrivately(message, "Watching coin for you");
             // todo: further implement this
         }
         else if (message.content === "test") {
-            console.log(message);
+            //console.log(message);
+            let callback = function() {};
+            this.bittrexAPI.getMarkets(callback);
         }
         else if (message.content.toLowerCase().startsWith("display id")) {
             if (message.content.toLowerCase().indexOf("true") > -1) {
@@ -118,6 +135,27 @@ module.exports.DiscordBot = class DiscordBot {
 
             this._respondPublicly(message, "parameter set")
         }
+        else if (message.content.toLowerCase().startsWith("bittrex price ")) {
+            let currency = message.content.substr("bittrex price ".length, message.content.length).toLowerCase();
+
+            const self = this;
+            let callback = function(response) {
+                response = self._prettifyJSON(response);
+
+                if (response !== undefined && response !== "") {
+                    self._respondPublicly(message, "Result: ```" + response + "```");
+                } else {
+                    self._respondPublicly(message, "Could not find coin: '" + currency + "'");
+                }
+            };
+            this.bittrexAPI.getTicker(callback, currency);
+        }
+    }
+
+    _prettifyJSON(jsonText) {
+        jsonText = jsonText.replace(/,/g, ",\n").replace(/{/g, "{\n").replace(/}/g, "\n}");
+        jsonText = jsonText.substr(2, jsonText.length-4);
+        return jsonText;
     }
 
     _respondPublicly(message, response) {

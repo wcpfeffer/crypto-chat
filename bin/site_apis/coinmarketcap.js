@@ -2,15 +2,38 @@
  * Created by William on 6/13/2017.
  */
 
-const SiteAPI = require("./site_api").SiteAPI;
+const WebTask = require("./webtask").WebTask;
 
-module.exports.CoinMarketCap = class CoinMarketCap extends SiteAPI {
+module.exports.CoinMarketCap = class CoinMarketCap extends WebTask {
+
+    constructor() {
+        super();
+        this._host = "api.coinmarketcap.com";
+        this._basePath = "/v1/ticker/";
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // "public" methods
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     /**
      * Fetches information about the coin
      */
-    static fetchCoinIndex(callback) {
-        this.execute(CoinMarketCap._getCoinHost(), CoinMarketCap._getCoinHostPath(), CoinMarketCap._onFetchCoinIndexResponse, callback);
+    fetchCoinIndex(callback) {
+        this._execute(this._onFetchCoinIndexResponse, callback);
     }
+
+    /**
+     * Finds the price of a coin based on its full name
+     * @param coinName  the full coin name
+     */
+    lookupCoinPrice(coinName, callback) {
+        this._execute(this._onCoinLookupResponse, callback, coinName + "/");
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // "private" methods that should only be called internally
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     /**
      * Fetches the entire coin index for lookup
@@ -18,15 +41,14 @@ module.exports.CoinMarketCap = class CoinMarketCap extends SiteAPI {
      * @param consumerCallback      the callback to the consumer of this method
      * @private
      */
-    static _onFetchCoinIndexResponse(data, consumerCallback) {
+    _onFetchCoinIndexResponse(self, data, consumerCallback) {
         let tickerLookup = new Map();
         let coinIndex = new Map();
 
-        if(consumerCallback){
-            // expects JSON
+        if (consumerCallback){
             let coinData = JSON.parse(data);
 
-            for(let i = 0; i < coinData.length; i++){
+            for (let i = 0; i < coinData.length; i++){
                 let id = coinData[i].id;
                 coinIndex.set(id, coinData[i]);
 
@@ -39,26 +61,17 @@ module.exports.CoinMarketCap = class CoinMarketCap extends SiteAPI {
     }
 
     /**
-     * Finds the price of a coin based on its full name
-     * @param coinName  the full coin name
-     */
-    static lookupCoinPrice(coinName, callback) {
-        this.execute(CoinMarketCap._getCoinHost(), CoinMarketCap._getCoinHostPath() + coinName + "/", CoinMarketCap._onCoinLookupResponse, callback); // execute the HTTP get command
-    }
-
-    /**
      * The function responsible for handling the data returned from the HTTP response
      * @param data                  the data returned from the HTTP response
      * @param consumerCallback      the callback to the consumer of this task
      * @private
      */
-    static _onCoinLookupResponse(data, consumerCallback){
-        if(consumerCallback){
-            // expects JSON
+    _onCoinLookupResponse(self, data, consumerCallback){
+        if (consumerCallback){
             let coinData = JSON.parse(data);
-            if(coinData[0] !== undefined) {
+            if (coinData[0] !== undefined) {
                 let coinPrice = coinData[0].price_usd;
-                if(coinPrice) {
+                if (coinPrice) {
                     consumerCallback(coinPrice);
                     return;
                 }
@@ -67,23 +80,5 @@ module.exports.CoinMarketCap = class CoinMarketCap extends SiteAPI {
             // fail with null return
             consumerCallback(null);
         }
-    }
-
-    /**
-     * @returns {string} the hostname of the API for coin lookup
-     * @private
-     */
-    static _getCoinHost(){
-        return "api.coinmarketcap.com";
-    }
-
-    /**
-     * Returns the path relative to the host given a coin name
-     * @param coinName      the name of the coin
-     * @returns {string}    the path of the HTTP request relative to the host name
-     * @private
-     */
-    static _getCoinHostPath(){
-        return "/v1/ticker/";
     }
 };
