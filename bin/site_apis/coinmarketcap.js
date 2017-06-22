@@ -2,14 +2,14 @@
  * Created by William on 6/13/2017.
  */
 
-const SiteAPI = require("./site_apis/site_api").SiteAPI;
+const SiteAPI = require("./site_api").SiteAPI;
 
-module.exports.CoinTask = class CoinTask extends SiteAPI {
+module.exports.CoinMarketCap = class CoinMarketCap extends SiteAPI {
     /**
      * Fetches information about the coin
      */
     static fetchCoinIndex(callback) {
-        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath(), CoinTask._onFetchCoinIndexResponse, callback);
+        this.execute(CoinMarketCap._getCoinHost(), CoinMarketCap._getCoinHostPath(), CoinMarketCap._onFetchCoinIndexResponse, callback);
     }
 
     /**
@@ -43,7 +43,7 @@ module.exports.CoinTask = class CoinTask extends SiteAPI {
      * @param coinName  the full coin name
      */
     static lookupCoinPrice(coinName, callback) {
-        this.execute(CoinTask._getCoinHost(), CoinTask._getCoinHostPath() + coinName + "/", CoinTask._onCoinLookupResponse, callback); // execute the HTTP get command
+        this.execute(CoinMarketCap._getCoinHost(), CoinMarketCap._getCoinHostPath() + coinName + "/", CoinMarketCap._onCoinLookupResponse, callback); // execute the HTTP get command
     }
 
     /**

@@ -7,7 +7,7 @@ const discord = require('discord.js');
 const client = new discord.Client();
 
 let config = require("./config.json");
-let CoinTask = require("./tasks").CoinTask;
+let CoinMarketCap = require("./site_apis/coinmarketcap").CoinMarketCap;
 
 let userDatabase;
 let whiteListMap = new Map();
@@ -74,7 +74,7 @@ module.exports.DiscordBot = class DiscordBot {
                 console.log("Initialized ticket lookup table");
             }
         };
-        CoinTask.fetchCoinIndex(callback);
+        CoinMarketCap.fetchCoinIndex(callback);
     }
 
     _handleMessage(message) {
@@ -100,7 +100,7 @@ module.exports.DiscordBot = class DiscordBot {
                     self._respondPublicly(message, "Could not find coin: '" + coinName + "'");
                 }
             };
-            CoinTask.lookupCoinPrice(coinName, callback);
+            CoinMarketCap.lookupCoinPrice(coinName, callback);
         }
         else if (message.content.startsWith("watch todo")) {
             this._respondPrivately(message, "Watching coin for you");
