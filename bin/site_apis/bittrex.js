@@ -4,7 +4,7 @@
 
 // see: https://bittrex.com/home/api
 
-const WebTask = require("./webtask").WebTask;
+const WebTask = require("../webtask").WebTask;
 
 module.exports.Bittrex = class Bittrex extends WebTask {
     constructor() {

@@ -2,7 +2,7 @@
  * Created by William on 6/13/2017.
  */
 
-const WebTask = require("./webtask").WebTask;
+const WebTask = require("../webtask").WebTask;
 
 module.exports.CoinMarketCap = class CoinMarketCap extends WebTask {
 
