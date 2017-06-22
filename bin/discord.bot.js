@@ -13,8 +13,11 @@ let userDatabase;
 let whiteListMap = new Map();
 
 // coin index information
-var tickerLookupMap = new Map();
-var coinIndexMap = new Map();
+let tickerLookupMap = new Map();
+let coinIndexMap = new Map();
+
+let botIDMessageSuffix = " | bot ID: " + config.bot_id;
+let displayBotID = false;
 
 module.exports.DiscordBot = class DiscordBot {
 
@@ -37,7 +40,7 @@ module.exports.DiscordBot = class DiscordBot {
             // also setup a timer
             setInterval(this._updateCoinIndex, config.coin_index_update_interval);
 
-            console.log("Discord bot up and running");
+            console.log("Discord bot up and running. Bot ID: " + config.bot_id);
         });
         client.on("message", message => {
             this._handleMessage(message);
@@ -80,31 +83,57 @@ module.exports.DiscordBot = class DiscordBot {
             return;
         }
 
-        if (message.content.startsWith("price of ")){
+        if (message.content.startsWith("price of ")) {
             let coinName = message.content.substr(9, message.content.length).toLowerCase();
 
-            // if we dont have this token cached, check the ticker lookup table for a symbol
+            // if we don't have this token cached, check the ticker lookup table for a symbol
             let symbol = coinName.toUpperCase();
             if (!coinIndexMap.has(coinName) && tickerLookupMap.has(symbol)) {
                 coinName = tickerLookupMap.get(symbol);
             }
 
+            const self = this;
             let callback = function(coinPrice) {
                 if (coinPrice !== null) {
-                    message.reply("The price of " + coinName + " is " + coinPrice + " USD.");
+                    self._respondPublicly(message, "The price of " + coinName + " is " + coinPrice + " USD.");
                 } else {
-                    message.reply("Could not find coin: '" + coinName + "'");
+                    self._respondPublicly(message, "Could not find coin: '" + coinName + "'");
                 }
             };
             CoinTask.lookupCoinPrice(coinName, callback);
         }
         else if (message.content.startsWith("watch todo")) {
-            message.author.sendMessage("Watching coin for you");
+            this._respondPrivately(message, "Watching coin for you");
             // todo: further implement this
         }
         else if (message.content === "test") {
             console.log(message);
         }
+        else if (message.content.toLowerCase().startsWith("display id")) {
+            if (message.content.toLowerCase().indexOf("true") > -1) {
+                displayBotID = true;
+            } else {
+                displayBotID = false;
+            }
+
+            this._respondPublicly(message, "parameter set")
+        }
+    }
+
+    _respondPublicly(message, response) {
+        if (displayBotID) {
+            response = response + botIDMessageSuffix;
+        }
+
+        message.reply(response);
+    }
+
+    _respondPrivately(message, response) {
+        if (displayBotID) {
+            response = response + botIDMessageSuffix;
+        }
+
+        message.author.sendMessage(response);
     }
 }
 

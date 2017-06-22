@@ -1,33 +1,10 @@
 /**
  * Created by William on 6/13/2017.
  */
-const http = require("http");
 
-class WebTask {
-    /**
-     * Executes an HTTP command
-     * @param host  the hostname
-     * @param path  the path relative to the hostname
-     * @param responseCallback
-     * @param requestCallback
-     */
-    static execute(host, path, responseCallback, requestCallback) {
-        return http.get({
-            host: host,
-            path: path
-        }, function(response) {
-            var data = "";
-            response.on("data", function(d) {
-                data += d;
-            });
-            response.on("end", function() {
-                responseCallback(data, requestCallback);
-            });
-        });
-    }
-}
+const SiteAPI = require("./site_apis/site_api").SiteAPI;
 
-module.exports.CoinTask = class CoinTask extends WebTask {
+module.exports.CoinTask = class CoinTask extends SiteAPI {
     /**
      * Fetches information about the coin
      */
